@@ -14,8 +14,8 @@ func TestConnect(t *testing.T) {
 	tr1.Connect(tr2)
 	tr2.Connect(tr1)
 
-	assert.Equal(t, tr1.peers[tr2.Addr()], tr2)
-	assert.Equal(t, tr2.peers[tr1.addr], tr1)
+	assert.Equal(t, tr1.(*LocalTransport).peers[tr2.Addr()], tr2)
+	assert.Equal(t, tr2.(*LocalTransport).peers[tr1.Addr()], tr1)
 }
 
 func TestSendMessage(t *testing.T) {
