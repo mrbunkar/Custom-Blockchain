@@ -2,6 +2,7 @@ package core
 
 import "io"
 
+// Transaction needs to be signed
 type Transaction struct {
 	Data []byte
 }
