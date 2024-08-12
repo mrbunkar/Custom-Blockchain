@@ -36,5 +36,6 @@ func TestSignVeriftFail(t *testing.T) {
 	otherPvKey := GeneratePrivateKey()
 	otherPuvKey := otherPvKey.GenerateKeyPublicKey()
 
-	assert.True(t, sign.Verify(otherPuvKey, msg))
+	assert.False(t, sign.Verify(otherPuvKey, msg))
+	assert.False(t, sign.Verify(pubKey, []byte("Hello")))
 }
