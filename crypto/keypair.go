@@ -31,13 +31,13 @@ func (k Privatekey) Sign(data []byte) (*Signature, error) {
 	return &Signature{r, s}, nil
 }
 
-func GeneratePrivateKey() Privatekey {
+func GeneratePrivateKey() *Privatekey {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 
 	if err != nil {
 		panic(err)
 	}
-	return Privatekey{
+	return &Privatekey{
 		key: key,
 	}
 }

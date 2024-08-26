@@ -1,49 +1,31 @@
 package core
 
 import (
-	"io"
+	"crypto/sha256"
 
 	"github.com/mrbunkar/blockchain/crypto"
-	"github.com/mrbunkar/blockchain/types"
+
+	"github.com/mrbunkar/blockchain/proto"
+	pb "google.golang.org/protobuf/proto"
 )
 
-type Header struct {
-	Version       uint32
-	DataHash      types.Hash
-	PrevBlockHash types.Hash
-	Timestamp     uint64
-	Height        uint32
-	Nonce         uint32
-}
-
-type Block struct {
-	*Header
-	Transaction []Transaction
-	Validator   crypto.PublicKey
-	Signture    *crypto.Signature
-
-	//Cached version of the header hash
-	hash types.Hash
-}
-
-func (b *Block) Hash(hasher Hasher[*Block]) types.Hash {
-	if b.hash.IsZero() {
-		b.hash = hasher.Hash(b)
+func HashBlock(block *proto.Block) []byte {
+	b, err := pb.Marshal(block)
+	if err != nil {
+		panic(err)
 	}
-	return b.hash
+
+	hash := sha256.Sum256(b)
+
+	return hash[:]
 }
 
-func (b *Block) Decoder(r io.Reader, dec Decoder[*Block]) error {
-	return dec.Decode(r, b)
-}
+func SignBlock(pk *crypto.Privatekey, b *proto.Block) *crypto.Signature {
+	sign, err := pk.Sign(HashBlock(b))
 
-func (b *Block) Encoder(w io.Writer, enc Encoder[*Block]) error {
-	return enc.Encode(w, b)
-}
-
-func NewBlock(h *Header, t []Transaction) *Block {
-	return &Block{
-		Header:      h,
-		Transaction: t,
+	if err != nil {
+		panic(err)
 	}
+
+	return sign
 }

@@ -1,32 +1,55 @@
 package core
 
 import (
+	"crypto/rand"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
-	"github.com/mrbunkar/blockchain/types"
+	"github.com/mrbunkar/blockchain/crypto"
+
+	"github.com/mrbunkar/blockchain/proto"
+	"github.com/stretchr/testify/assert"
 )
 
-func RandBLock(height uint32) *Block {
-	header := &Header{
+func RandomHash() []byte {
+	buf := make([]byte, 32)
+	io.ReadFull(rand.Reader, buf)
+	return buf
+}
+
+func RandomBLock(height int32) *proto.Block {
+	header := &proto.Header{
 		Version:       1,
-		PrevBlockHash: types.RandomHash(),
 		Height:        height,
-		Timestamp:     uint64(time.Now().UnixNano()),
+		PrevBlockHash: RandomHash(),
+		DataHash:      RandomHash(),
+		Timestamp:     time.Now().UnixNano(),
+		Nonce:         32,
 	}
 
-	tx := Transaction{
-		Data: []byte("Foo"),
-	}
+	tx := &proto.Transaction{}
 
-	return &Block{
+	return &proto.Block{
 		Header:      header,
-		Transaction: []Transaction{tx},
+		Transaction: []*proto.Transaction{tx},
 	}
 }
 
 func TestHashBlock(t *testing.T) {
-	b := RandBLock(32)
-	fmt.Println(b.Hash(BlockHasher{}))
+	b := RandomBLock(32)
+	hash := HashBlock(b)
+	fmt.Println(hash)
+	assert.Equal(t, 32, len(hash))
+}
+
+func TestSig(t *testing.T) {
+	b := RandomBLock(32)
+	pk := crypto.GeneratePrivateKey()
+	pb := pk.GenerateKeyPublicKey()
+
+	sign := SignBlock(pk, b)
+	assert.True(t, sign.Verify(pb, HashBlock(b)))
+	assert.False(t, sign.Verify(pb, RandomHash()))
 }

@@ -31,3 +31,10 @@ func main() {
 	server.Start()
 
 }
+
+// func main() {
+// 	s := "{[]]}"
+
+// 	fmt.Println(test(s))
+// 	fmt.Println(test("{[]}()"))
+// }
