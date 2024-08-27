@@ -9,7 +9,7 @@ import (
 
 func TestSignVerify(t *testing.T) {
 	pvKey := GeneratePrivateKey()
-	pubKey := pvKey.GenerateKeyPublicKey()
+	pubKey := pvKey.GeneratePublicKey()
 
 	addres := pubKey.Address()
 	fmt.Println(addres.ToString())
@@ -22,9 +22,9 @@ func TestSignVerify(t *testing.T) {
 	assert.True(t, sign.Verify(pubKey, msg))
 }
 
-func TestSignVeriftFail(t *testing.T) {
+func TestSignVerifyFail(t *testing.T) {
 	pvKey := GeneratePrivateKey()
-	pubKey := pvKey.GenerateKeyPublicKey()
+	pubKey := pvKey.GeneratePublicKey()
 
 	addres := pubKey.Address()
 	fmt.Println(addres.ToString())
@@ -34,8 +34,10 @@ func TestSignVeriftFail(t *testing.T) {
 	assert.Nil(t, err)
 
 	otherPvKey := GeneratePrivateKey()
-	otherPuvKey := otherPvKey.GenerateKeyPublicKey()
-
-	assert.False(t, sign.Verify(otherPuvKey, msg))
+	otherPubKey := otherPvKey.GeneratePublicKey()
+	fmt.Println(sign)
+	fmt.Println(SignFromBytes(sign.Bytes()))
+	assert.Equal(t, sign, SignFromBytes(sign.Bytes()))
+	assert.False(t, sign.Verify(otherPubKey, msg))
 	assert.False(t, sign.Verify(pubKey, []byte("Hello")))
 }

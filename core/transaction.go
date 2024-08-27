@@ -1,24 +1,44 @@
 package core
 
 import (
+	"crypto/sha256"
+
 	"github.com/mrbunkar/blockchain/crypto"
+	"github.com/mrbunkar/blockchain/proto"
+	pb "google.golang.org/protobuf/proto"
 )
 
-// Transaction needs to be signed
-type Transaction struct {
-	Data []byte
+func SignTransaction(tx *proto.Transaction, pk *crypto.Privatekey) *crypto.Signature {
+	hash := HashTransaction(tx)
 
-	PublicKey crypto.PublicKey
-	Signature *crypto.Signature
+	sign, err := pk.Sign(hash)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return sign
 }
 
-func (tx *Transaction) Sign(prvKey crypto.Privatekey) error {
-	s, err := prvKey.Sign(tx.Data)
-	if err != nil {
-		return err
-	}
-	tx.PublicKey = prvKey.GenerateKeyPublicKey()
-	tx.Signature = s
+func HashTransaction(tx *proto.Transaction) []byte {
+	b, err := pb.Marshal(tx)
 
-	return nil
+	if err != nil {
+		panic(err)
+	}
+
+	hash := sha256.Sum256(b)
+	return hash[:]
+}
+
+func VerifyTransaction(tx *proto.Transaction) bool {
+	for _, input := range tx.Input {
+		sg := crypto.SignFromBytes(input.Signature)
+		// input.Signature = nil
+		hash := HashTransaction(tx)
+		if !sg.Verify(input.PublicKey, hash) {
+			return false
+		}
+	}
+	return true
 }

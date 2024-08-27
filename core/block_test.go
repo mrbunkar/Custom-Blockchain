@@ -47,7 +47,7 @@ func TestHashBlock(t *testing.T) {
 func TestSig(t *testing.T) {
 	b := RandomBLock(32)
 	pk := crypto.GeneratePrivateKey()
-	pb := pk.GenerateKeyPublicKey()
+	pb := pk.GeneratePublicKey()
 
 	sign := SignBlock(pk, b)
 	assert.True(t, sign.Verify(pb, HashBlock(b)))
