@@ -44,7 +44,8 @@ func TestHashBlock(t *testing.T) {
 	assert.Equal(t, 32, len(hash))
 }
 
-func TestSig(t *testing.T) {
+func TestSign(t *testing.T) {
+
 	b := RandomBLock(32)
 	pk := crypto.GeneratePrivateKey()
 	pb := pk.GeneratePublicKey()

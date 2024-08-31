@@ -49,5 +49,7 @@ func TestTransaction(t *testing.T) {
 
 	// fmt.Println(transaction)
 	fmt.Println(VerifyTransaction(transaction))
+
+	// Test is failing because of verify.
 	assert.True(t, VerifyTransaction(transaction))
 }

@@ -34,6 +34,7 @@ func HashTransaction(tx *proto.Transaction) []byte {
 func VerifyTransaction(tx *proto.Transaction) bool {
 	for _, input := range tx.Input {
 		sg := crypto.SignFromBytes(input.Signature)
+		//@TODO: Make input.Signature part of Transaction itself
 		// input.Signature = nil
 		hash := HashTransaction(tx)
 		if !sg.Verify(input.PublicKey, hash) {

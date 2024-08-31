@@ -33,3 +33,16 @@ message Transaction {
     repeated Input input = 2;
     repeated Output output = 3;
 }
+
+message None {}
+
+message Version {
+    string version = 1;
+    int32 height = 2;
+    string listenAddr = 3;
+}
+
+service Node {
+    rpc Handshake(Version) returns(Version) {};
+    rpc HandleTransaction(Transaction) returns(Transaction) {};
+}
