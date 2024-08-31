@@ -14,20 +14,22 @@ import (
 )
 
 type Node struct {
-	version string
-	Height  int32
+	version    string
+	Height     int32
+	listenAddr string
 
 	peerLock sync.Mutex
 	peers    map[proto.NodeClient]*proto.Version
 	proto.UnimplementedNodeServer
 }
 
-func NewNode() *Node {
+func NewNode(listenAddr string) *Node {
 	return &Node{
-		peerLock: sync.Mutex{},
-		peers:    make(map[proto.NodeClient]*proto.Version),
-		version:  "Blockchain-0-2",
-		Height:   1,
+		peerLock:   sync.Mutex{},
+		peers:      make(map[proto.NodeClient]*proto.Version),
+		version:    "Blockchain-0-2",
+		Height:     1,
+		listenAddr: listenAddr,
 	}
 }
 
@@ -45,15 +47,18 @@ func (node *Node) deletePeer(peer proto.NodeClient) {
 	delete(node.peers, peer)
 }
 
-func (node *Node) Start(listenAddr string) error {
+func (node *Node) Start() error {
 	rpcOpts := []grpc.ServerOption{}
-	listen, err := net.Listen("tcp", listenAddr)
+
+	listen, err := net.Listen("tcp", node.listenAddr)
 	if err != nil {
 		panic(err)
 	}
+
 	grpc.WithTransportCredentials(insecure.NewCredentials())
 	server := grpc.NewServer(rpcOpts...)
 	proto.RegisterNodeServer(server, node)
+
 	fmt.Printf("gRPC server listening at %v \n", listen.Addr().String())
 	return server.Serve(listen)
 }
@@ -68,8 +73,9 @@ func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) 
 func (node *Node) Handshake(ctx context.Context, version *proto.Version) (*proto.Version, error) {
 	// peer, _ := peer.FromContext(ctx)
 	ourVersion := &proto.Version{
-		Version: node.version,
-		Height:  10,
+		Version:    node.version,
+		Height:     10,
+		ListenAddr: node.listenAddr,
 	}
 	client, err := node.NewNodeClient(version.ListenAddr)
 	if err != nil {
@@ -91,17 +97,22 @@ func (node *Node) getVersion() *proto.Version {
 }
 
 func (node *Node) NewNodeClient(listenAddr string) (proto.NodeClient, error) {
+
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time)
+	// defer cancel()
 	client, err := grpc.NewClient(listenAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		return nil, err
 	}
+	client.Connect()
 
 	return proto.NewNodeClient(client), err
 }
 
-func (node *Node) BootStrapNetwork(addrs []string) {
+func (node *Node) BootStrapNetwork(addrs []string) error {
 	for _, addr := range addrs {
+		fmt.Println(1)
 		client, err := node.NewNodeClient(addr)
 
 		if err != nil {
@@ -113,8 +124,10 @@ func (node *Node) BootStrapNetwork(addrs []string) {
 
 		if err != nil {
 			log.Printf("Error {%s} during hanshake with Client: %s\n", addr, err)
+			continue
 		}
 		node.addPeer(client, version)
 		fmt.Println("Handshake complete:", version)
 	}
+	return nil
 }

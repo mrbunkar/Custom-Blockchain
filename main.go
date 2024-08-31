@@ -34,27 +34,53 @@ import (
 
 	"github.com/mrbunkar/blockchain/node"
 	"github.com/mrbunkar/blockchain/proto"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	node := node.NewNode()
-	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			MakeTransaction()
-		}
-	}()
+	MakeNode(":3000", []string{})
+	MakeNode(":4000", []string{":3000"})
+	// go func() {
+	// 	for {
+	// 		time.Sleep(2 * time.Second)
+	// 		MakeTransaction()
+	// 	}
+	// }()
 
-	log.Fatal(node.Start(":3000"))
+	// go node.BootStrapNetwork()
+
+	// log.Fatal(node.Start(":3000"))
+	select {}
+}
+
+func MakeNode(listenAddr string, bootstrapNodes []string) *node.Node {
+	node := node.NewNode(listenAddr)
+	go node.Start()
+
+	time.Sleep(1 * time.Second)
+	if len(bootstrapNodes) != 0 {
+		if err := node.BootStrapNetwork(bootstrapNodes); err != nil {
+			log.Printf("Error bootstrapping network: %v\n", err)
+		}
+	}
+
+	return node
 }
 
 func MakeTransaction() {
 
-	conn, err := grpc.NewClient(":3000", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	// _, _ = conn.HandleTransaction(context.TODO(), &proto.Transaction{})
-	client := proto.NewNodeClient(conn)
+	// conn, err := grpc.NewClient(":3000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// // _, _ = conn.HandleTransaction(context.TODO(), &proto.Transaction{})
+	// client := proto.NewNodeClient(conn)
+
+	node := node.NewNode(":4000")
+	fmt.Println(1)
+	client, err := node.NewNodeClient(":5000")
+	fmt.Println(2)
+
+	if err != nil {
+		panic(err)
+	}
+
 	version := &proto.Version{
 		Version:    "Blockchain-0-1",
 		Height:     1,
