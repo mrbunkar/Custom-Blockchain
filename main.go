@@ -39,6 +39,8 @@ import (
 func main() {
 	MakeNode(":3000", []string{})
 	MakeNode(":4000", []string{":3000"})
+	time.Sleep(1 * time.Second)
+	MakeNode(":3030", []string{":4000", ":3100"})
 	// go func() {
 	// 	for {
 	// 		time.Sleep(2 * time.Second)
@@ -53,16 +55,8 @@ func main() {
 }
 
 func MakeNode(listenAddr string, bootstrapNodes []string) *node.Node {
-	node := node.NewNode(listenAddr)
+	node := node.NewNode(listenAddr, bootstrapNodes)
 	go node.Start()
-
-	time.Sleep(1 * time.Second)
-	if len(bootstrapNodes) != 0 {
-		if err := node.BootStrapNetwork(bootstrapNodes); err != nil {
-			log.Printf("Error bootstrapping network: %v\n", err)
-		}
-	}
-
 	return node
 }
 
@@ -72,7 +66,7 @@ func MakeTransaction() {
 	// // _, _ = conn.HandleTransaction(context.TODO(), &proto.Transaction{})
 	// client := proto.NewNodeClient(conn)
 
-	node := node.NewNode(":4000")
+	node := node.NewNode(":4000", []string{})
 	fmt.Println(1)
 	client, err := node.NewNodeClient(":5000")
 	fmt.Println(2)
