@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/mrbunkar/blockchain/proto"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/peer"
@@ -20,23 +21,26 @@ type Node struct {
 
 	peerLock sync.Mutex
 	peers    map[proto.NodeClient]*proto.Version
+	logger   *zap.SugaredLogger
 	proto.UnimplementedNodeServer
 }
 
 func NewNode(listenAddr string) *Node {
+	logger, _ := zap.NewDevelopment()
 	return &Node{
 		peerLock:   sync.Mutex{},
 		peers:      make(map[proto.NodeClient]*proto.Version),
 		version:    "Blockchain-0-2",
 		Height:     1,
 		listenAddr: listenAddr,
+		logger:     logger.Sugar(),
 	}
 }
 
 func (node *Node) addPeer(peer proto.NodeClient, v *proto.Version) {
 	node.peerLock.Lock()
 	defer node.peerLock.Unlock()
-	log.Println("Peer connected", v.ListenAddr)
+	// log.Println("Peer connected", v.ListenAddr)
 	node.peers[peer] = v
 }
 
@@ -48,7 +52,11 @@ func (node *Node) deletePeer(peer proto.NodeClient) {
 }
 
 func (node *Node) Start() error {
-	rpcOpts := []grpc.ServerOption{}
+
+	var (
+		rpcOpts = []grpc.ServerOption{}
+		server  = grpc.NewServer(rpcOpts...)
+	)
 
 	listen, err := net.Listen("tcp", node.listenAddr)
 	if err != nil {
@@ -56,10 +64,11 @@ func (node *Node) Start() error {
 	}
 
 	grpc.WithTransportCredentials(insecure.NewCredentials())
-	server := grpc.NewServer(rpcOpts...)
+
 	proto.RegisterNodeServer(server, node)
 
-	fmt.Printf("gRPC server listening at %v \n", listen.Addr().String())
+	node.logger.Infof("gRPC server listening at %v", listen.Addr().String())
+
 	return server.Serve(listen)
 }
 
@@ -72,27 +81,29 @@ func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) 
 
 func (node *Node) Handshake(ctx context.Context, version *proto.Version) (*proto.Version, error) {
 	// peer, _ := peer.FromContext(ctx)
-	ourVersion := &proto.Version{
-		Version:    node.version,
-		Height:     10,
-		ListenAddr: node.listenAddr,
-	}
+	// ourVersion := &proto.Version{
+	// 	Version:    node.version,
+	// 	Height:     10,
+	// 	ListenAddr: node.listenAddr,
+	// }
+	ourVersion := node.getVersion()
 	client, err := node.NewNodeClient(version.ListenAddr)
 	if err != nil {
-		log.Printf("Failed to add client. Handshake failed %v\n", version.ListenAddr)
+		node.logger.Errorf("Failed to add client. Handshake failed %v", version.ListenAddr)
 		return nil, err
 	}
 
 	node.addPeer(client, version)
 
-	fmt.Println("Handshake complete:", version)
+	node.logger.Debugf("[%s] Handshake completed with [%s]", ourVersion.ListenAddr, version.ListenAddr)
 	return ourVersion, nil
 }
 
 func (node *Node) getVersion() *proto.Version {
 	return &proto.Version{
-		Version: node.version,
-		Height:  node.Height,
+		Version:    node.version,
+		Height:     node.Height,
+		ListenAddr: node.listenAddr,
 	}
 }
 
@@ -112,22 +123,21 @@ func (node *Node) NewNodeClient(listenAddr string) (proto.NodeClient, error) {
 
 func (node *Node) BootStrapNetwork(addrs []string) error {
 	for _, addr := range addrs {
-		fmt.Println(1)
 		client, err := node.NewNodeClient(addr)
 
 		if err != nil {
-			log.Printf("Error in connecting to Client: %s, Error: %s\n", addr, err)
+			node.logger.Errorf("Error in connecting to Client: %s, Error: %s", addr, err)
 			continue
 		}
 		ourVersion := node.getVersion()
 		version, err := client.Handshake(context.TODO(), ourVersion)
 
 		if err != nil {
-			log.Printf("Error {%s} during hanshake with Client: %s\n", addr, err)
+			log.Printf("Error {%s} during hanshake with Client: %s", addr, err)
 			continue
 		}
 		node.addPeer(client, version)
-		fmt.Println("Handshake complete:", version)
+		node.logger.Debugf("[%s] Handshake completed with [%s]", ourVersion.ListenAddr, version.ListenAddr)
 	}
 	return nil
 }
