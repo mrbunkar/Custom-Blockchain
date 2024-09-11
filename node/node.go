@@ -173,7 +173,7 @@ func (node *Node) bootStrapNetwork(addrs []string) {
 		}
 
 		node.addPeer(client, version)
-		// node.logger.Debugf("[%s] Handshake completed with [%s]", ourVersion.ListenAddr, version.ListenAddr)
+		node.logger.Debugf("[%s] Handshake completed with [%s]", node.listenAddr, version.ListenAddr)
 	}
 
 	node.logger.Infof("[%s] Bootstrap Netowrk done...", node.listenAddr)
