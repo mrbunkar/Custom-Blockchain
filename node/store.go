@@ -32,7 +32,7 @@ func (s *MemoryBlockStore) Get(hash string) (*proto.Block, error) {
 	block, ok := s.blocks[hash]
 
 	if !ok {
-		return nil, fmt.Errorf("Block with [%s] does not exist\n", hash)
+		return nil, fmt.Errorf("Block with [%s] does not exist", hash)
 	}
 
 	return block, nil
