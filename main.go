@@ -28,12 +28,15 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
+	"github.com/mrbunkar/blockchain/crypto"
 	"github.com/mrbunkar/blockchain/node"
 	"github.com/mrbunkar/blockchain/proto"
+	"github.com/mrbunkar/blockchain/util"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -41,12 +44,13 @@ func main() {
 	MakeNode(":4000", []string{":3000"})
 	time.Sleep(1 * time.Second)
 	MakeNode(":3030", []string{":4000", ":3100"})
-	// go func() {
-	// 	for {
-	// 		time.Sleep(2 * time.Second)
-	// 		MakeTransaction()
-	// 	}
-	// }()
+	time.Sleep(1)
+	go func() {
+		for {
+			time.Sleep(2 * time.Second)
+			MakeTransaction()
+		}
+	}()
 
 	// go node.BootStrapNetwork()
 
@@ -62,29 +66,40 @@ func MakeNode(listenAddr string, bootstrapNodes []string) *node.Node {
 
 func MakeTransaction() {
 
-	// conn, err := grpc.NewClient(":3000", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	// // _, _ = conn.HandleTransaction(context.TODO(), &proto.Transaction{})
-	// client := proto.NewNodeClient(conn)
+	conn, err := grpc.NewClient(":3000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// _, _ = conn.HandleTransaction(context.TODO(), &proto.Transaction{})
+	client := proto.NewNodeClient(conn)
 
-	node := node.NewNode(":4000", []string{})
-	fmt.Println(1)
-	client, err := node.NewNodeClient(":5000")
-	fmt.Println(2)
-
-	if err != nil {
-		panic(err)
+	prKey := crypto.GeneratePrivateKey()
+	pubKey := prKey.GeneratePublicKey()
+	tx := &proto.Transaction{
+		Version: 1,
+		Input: []*proto.Input{
+			{
+				PrevOutHash: util.RandomHash(),
+				PrevOutIdx:  0,
+				PublicKey:   pubKey,
+			},
+		},
+		Output: []*proto.Output{
+			{
+				Amount:   1,
+				Reciever: pubKey,
+			},
+		},
 	}
 
-	version := &proto.Version{
-		Version:    "Blockchain-0-1",
-		Height:     1,
-		ListenAddr: ":4000",
-	}
-	version, err = client.Handshake(context.TODO(), version)
+	// version := &proto.Version{
+	// 	Version:    "Blockchain-0-1",
+	// 	Height:     1,
+	// 	ListenAddr: ":4000",
+	// }
+	// version, err = client.Handshake(context.TODO(), version)
+
+	_, err = client.HandleTransaction(context.TODO(), tx)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Client", version)
 }

@@ -2,11 +2,12 @@ package node
 
 import (
 	"context"
-	"fmt"
+	"encoding/hex"
 	"log"
 	"net"
 	"sync"
 
+	"github.com/mrbunkar/blockchain/core"
 	"github.com/mrbunkar/blockchain/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -107,8 +108,9 @@ func (node *Node) Start() error {
 
 func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) (*proto.Transaction, error) {
 	peer, _ := peer.FromContext(ctx)
-	fmt.Println("Recieved peer", peer)
+	hashHex := hex.EncodeToString(core.HashTransaction(tx))
 
+	node.logger.Debugf("Recieed transaction from [%s]. Hash of tx: [%s]", peer.Addr, hashHex)
 	return nil, nil
 }
 
@@ -196,3 +198,5 @@ func (node *Node) dialRemoteNode(addr string) (proto.NodeClient, *proto.Version,
 
 	return client, version, nil
 }
+
+func (node *Node) Broadcast()
