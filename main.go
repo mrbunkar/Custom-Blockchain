@@ -43,14 +43,17 @@ func main() {
 	MakeNode(":3000", []string{})
 	MakeNode(":4000", []string{":3000"})
 	time.Sleep(1 * time.Second)
-	MakeNode(":3030", []string{":4000", ":3100"})
-	time.Sleep(1)
-	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			MakeTransaction()
-		}
-	}()
+	MakeNode(":3100", []string{})
+	MakeNode(":3030", []string{":4000", ":i"})
+	time.Sleep(3)
+	// go func() {
+	// 	for {
+	// 		time.Sleep(2 * time.Second)
+	// 		MakeTransaction()
+	// 	}
+	// }()
+
+	// MakeTransaction()
 
 	// go node.BootStrapNetwork()
 

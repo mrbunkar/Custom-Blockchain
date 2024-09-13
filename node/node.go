@@ -111,6 +111,13 @@ func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) 
 	hashHex := hex.EncodeToString(core.HashTransaction(tx))
 
 	node.logger.Debugf("Recieed transaction from [%s]. Hash of tx: [%s]", peer.Addr, hashHex)
+
+	go func() {
+		if err := node.Broadcast(tx); err != nil {
+			node.logger.Errorln("Error broadcating the transaction", err)
+			return
+		}
+	}()
 	return nil, nil
 }
 
@@ -199,4 +206,22 @@ func (node *Node) dialRemoteNode(addr string) (proto.NodeClient, *proto.Version,
 	return client, version, nil
 }
 
-func (node *Node) Broadcast()
+func (node *Node) Broadcast(msg any) error {
+
+	// Broadcast a newly transaction to all the nodes on the network
+
+	for peer, _ := range node.peers {
+		switch v := msg.(type) {
+		case *proto.Transaction:
+			_, err := peer.HandleTransaction(context.TODO(), v)
+
+			if err != nil {
+				return err
+				// node.logger.Errorf("Error broadcasting transaction to peer [%s]\n", peer)
+				// continue
+			}
+		}
+	}
+
+	return nil
+}
