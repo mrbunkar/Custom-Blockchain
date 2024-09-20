@@ -44,20 +44,11 @@ func main() {
 	MakeNode(":4000", []string{":3000"})
 	time.Sleep(1 * time.Second)
 	MakeNode(":3100", []string{})
-	MakeNode(":3030", []string{":4000", ":i"})
-	time.Sleep(3)
-	// go func() {
-	// 	for {
-	// 		time.Sleep(2 * time.Second)
-	// 		MakeTransaction()
-	// 	}
-	// }()
+	MakeNode(":3030", []string{":4000", ":3100"})
+	time.Sleep(1 * time.Second)
 
-	// MakeTransaction()
+	MakeTransaction()
 
-	// go node.BootStrapNetwork()
-
-	// log.Fatal(node.Start(":3000"))
 	select {}
 }
 
@@ -91,13 +82,6 @@ func MakeTransaction() {
 			},
 		},
 	}
-
-	// version := &proto.Version{
-	// 	Version:    "Blockchain-0-1",
-	// 	Height:     1,
-	// 	ListenAddr: ":4000",
-	// }
-	// version, err = client.Handshake(context.TODO(), version)
 
 	_, err = client.HandleTransaction(context.TODO(), tx)
 

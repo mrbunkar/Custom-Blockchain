@@ -2,12 +2,10 @@ package node
 
 import (
 	"context"
-	"encoding/hex"
 	"log"
 	"net"
 	"sync"
 
-	"github.com/mrbunkar/blockchain/core"
 	"github.com/mrbunkar/blockchain/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -24,6 +22,7 @@ type Node struct {
 	peers          map[proto.NodeClient]*proto.Version
 	logger         *zap.SugaredLogger
 	bootstrapNodes []string
+	pool           *Mempool
 	proto.UnimplementedNodeServer
 }
 
@@ -37,6 +36,7 @@ func NewNode(listenAddr string, bootstrapNodes []string) *Node {
 		listenAddr:     listenAddr,
 		logger:         logger.Sugar(),
 		bootstrapNodes: bootstrapNodes,
+		pool:           NewMempool(),
 	}
 }
 
@@ -108,16 +108,17 @@ func (node *Node) Start() error {
 
 func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) (*proto.Transaction, error) {
 	peer, _ := peer.FromContext(ctx)
-	hashHex := hex.EncodeToString(core.HashTransaction(tx))
 
-	node.logger.Debugf("Recieed transaction from [%s]. Hash of tx: [%s]", peer.Addr, hashHex)
-
-	go func() {
-		if err := node.Broadcast(tx); err != nil {
-			node.logger.Errorln("Error broadcating the transaction", err)
-			return
-		}
-	}()
+	if !node.pool.Check(tx) {
+		node.pool.StoreTx(tx)
+		node.logger.Debugf("Recieed transaction from [%s]. We [%s]", peer.Addr, node.listenAddr)
+		go func() {
+			if err := node.Broadcast(tx); err != nil {
+				node.logger.Errorln("Error broadcating the transaction", err)
+				return
+			}
+		}()
+	}
 	return nil, nil
 }
 
