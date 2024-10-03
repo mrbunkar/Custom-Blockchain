@@ -1,6 +1,7 @@
 syntax = "proto3";
 option go_package = "github.com/mrbunkar/blockchain/proto";
 
+
 message Block {
     Header header = 1;
     repeated Transaction transaction = 2;

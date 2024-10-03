@@ -2,9 +2,11 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/mrbunkar/blockchain/proto"
 	"go.uber.org/zap"
@@ -23,10 +25,11 @@ type Node struct {
 	logger         *zap.SugaredLogger
 	bootstrapNodes []string
 	pool           *Mempool
+	nodeType       string
 	proto.UnimplementedNodeServer
 }
 
-func NewNode(listenAddr string, bootstrapNodes []string) *Node {
+func NewNode(listenAddr string, bootstrapNodes []string, nodeType string) *Node {
 	logger, _ := zap.NewDevelopment()
 	return &Node{
 		peerLock:       sync.Mutex{},
@@ -37,6 +40,7 @@ func NewNode(listenAddr string, bootstrapNodes []string) *Node {
 		logger:         logger.Sugar(),
 		bootstrapNodes: bootstrapNodes,
 		pool:           NewMempool(),
+		nodeType:       nodeType,
 	}
 }
 
@@ -83,6 +87,17 @@ func (node *Node) deletePeer(peer proto.NodeClient) {
 	delete(node.peers, peer)
 }
 
+func (node *Node) validatorLoop() {
+	ticker := time.NewTicker(1 * time.Second)
+
+	for {
+		<-ticker.C
+		if node.pool.Size() > 5 {
+			fmt.Println("Time to mine")
+		}
+	}
+}
+
 func (node *Node) Start() error {
 
 	var (
@@ -101,6 +116,10 @@ func (node *Node) Start() error {
 
 	if len(node.bootstrapNodes) != 0 {
 		go node.bootStrapNetwork(node.bootstrapNodes)
+	}
+
+	if node.nodeType == "Miner" {
+		go node.validatorLoop()
 	}
 
 	return server.Serve(listen)

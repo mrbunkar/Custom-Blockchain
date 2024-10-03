@@ -33,3 +33,12 @@ func (pool *Mempool) StoreTx(tx *proto.Transaction) {
 	hashHex := hex.EncodeToString(core.HashTransaction(tx))
 	pool.txs[hashHex] = tx
 }
+
+func (pool *Mempool) DeleteTx(tx *proto.Transaction) {
+	hashHex := hex.EncodeToString(core.HashTransaction(tx))
+	delete(pool.txs, hashHex)
+}
+
+func (pool *Mempool) Size() int {
+	return len(pool.txs)
+}

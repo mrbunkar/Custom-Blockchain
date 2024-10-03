@@ -1,31 +1,5 @@
 package main
 
-// Server
-// Transport layer TCP, UDP, websocket
-// Blockchain
-
-// func main() {
-// 	trlocal := network.NewLocalTransport("LOCAL")
-// 	trRemote := network.NewLocalTransport("REMOTE")
-
-// 	trlocal.Connect(trRemote)
-// 	trRemote.Connect(trlocal)
-
-// 	go func() {
-// 		for {
-// 			trRemote.SendMessage(trlocal.Addr(), []byte("Hello world"))
-// 			time.Sleep(1 * time.Second)
-// 		}
-// 	}()
-
-// 	opts := network.ServerOpts{
-// 		Transports: []network.Transport{trlocal},
-// 	}
-// 	server := network.NewServer(opts)
-// 	server.Start()
-
-// }
-
 import (
 	"context"
 	"log"
@@ -40,20 +14,23 @@ import (
 )
 
 func main() {
-	MakeNode(":3000", []string{})
-	MakeNode(":4000", []string{":3000"})
+	MakeNode(":3000", []string{}, "Normal")
+	MakeNode(":4000", []string{":3000"}, "Normal")
 	time.Sleep(1 * time.Second)
-	MakeNode(":3100", []string{})
-	MakeNode(":3030", []string{":4000", ":3100"})
+	MakeNode(":3100", []string{}, "Miner")
+	MakeNode(":3030", []string{":4000", ":3100"}, "Normal")
 	time.Sleep(1 * time.Second)
 
-	MakeTransaction()
+	for {
+		time.Sleep(1 * time.Second)
+		MakeTransaction()
+	}
 
 	select {}
 }
 
-func MakeNode(listenAddr string, bootstrapNodes []string) *node.Node {
-	node := node.NewNode(listenAddr, bootstrapNodes)
+func MakeNode(listenAddr string, bootstrapNodes []string, nodeType string) *node.Node {
+	node := node.NewNode(listenAddr, bootstrapNodes, nodeType)
 	go node.Start()
 	return node
 }
