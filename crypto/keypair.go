@@ -12,7 +12,8 @@ import (
 )
 
 type Privatekey struct {
-	key *ecdsa.PrivateKey
+	key       *ecdsa.PrivateKey
+	PublicKey PublicKey
 }
 
 type PublicKey []byte
@@ -36,9 +37,12 @@ func GeneratePrivateKey() *Privatekey {
 	if err != nil {
 		panic(err)
 	}
-	return &Privatekey{
+	privateKey := &Privatekey{
 		key: key,
 	}
+
+	privateKey.PublicKey = privateKey.GeneratePublicKey()
+	return privateKey
 }
 
 func (k *Privatekey) GeneratePublicKey() PublicKey {

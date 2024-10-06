@@ -44,10 +44,8 @@ func TestTransaction(t *testing.T) {
 		Output:  []*proto.Output{output1, output2},
 	}
 
-	sig := SignTransaction(transaction, fromPk)
-	input.Signature = sig.Bytes()
+	SignTransaction(transaction, fromPk)
 
-	// fmt.Println(transaction)
 	fmt.Println(VerifyTransaction(transaction))
 
 	// Test is failing because of verify.

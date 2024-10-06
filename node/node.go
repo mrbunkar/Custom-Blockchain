@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mrbunkar/blockchain/core"
 	"github.com/mrbunkar/blockchain/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -42,6 +43,9 @@ func NewNode(listenAddr string, bootstrapNodes []string, nodeType string) *Node 
 		pool:           NewMempool(),
 		nodeType:       nodeType,
 	}
+}
+
+func (node *Node) proofOfWork(puzzle string) {
 }
 
 func (node *Node) isPeer(Addr string) bool {
@@ -87,6 +91,21 @@ func (node *Node) deletePeer(peer proto.NodeClient) {
 	delete(node.peers, peer)
 }
 
+// func (node *Node) NewBlock() *proto.Block {
+
+// }
+
+func (node *Node) TxsVerification(txs *proto.Transaction) bool {
+	// @TODO Add UTXO model for verification
+
+	for _, input := range txs.Input {
+		if len(input.Signature) == 0 {
+			return false
+		}
+	}
+	return core.VerifyTransaction(txs)
+}
+
 func (node *Node) validatorLoop() {
 	ticker := time.NewTicker(1 * time.Second)
 
@@ -129,6 +148,11 @@ func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) 
 	peer, _ := peer.FromContext(ctx)
 
 	if !node.pool.Check(tx) {
+
+		if !node.TxsVerification(tx) {
+			return nil, fmt.Errorf("Transaction failed Verification process")
+		}
+
 		node.pool.StoreTx(tx)
 		node.logger.Debugf("Recieed transaction from [%s]. We [%s]", peer.Addr, node.listenAddr)
 		go func() {
@@ -236,8 +260,8 @@ func (node *Node) Broadcast(msg any) error {
 			_, err := peer.HandleTransaction(context.TODO(), v)
 
 			if err != nil {
+				node.logger.Errorf("Error broadcasting transaction to peer [%s]\n", peer)
 				return err
-				// node.logger.Errorf("Error broadcasting transaction to peer [%s]\n", peer)
 				// continue
 			}
 		}

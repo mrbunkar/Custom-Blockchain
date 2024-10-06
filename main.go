@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/mrbunkar/blockchain/core"
 	"github.com/mrbunkar/blockchain/crypto"
 	"github.com/mrbunkar/blockchain/node"
 	"github.com/mrbunkar/blockchain/proto"
@@ -26,7 +27,6 @@ func main() {
 		MakeTransaction()
 	}
 
-	select {}
 }
 
 func MakeNode(listenAddr string, bootstrapNodes []string, nodeType string) *node.Node {
@@ -42,7 +42,7 @@ func MakeTransaction() {
 	client := proto.NewNodeClient(conn)
 
 	prKey := crypto.GeneratePrivateKey()
-	pubKey := prKey.GeneratePublicKey()
+	pubKey := prKey.PublicKey
 	tx := &proto.Transaction{
 		Version: 1,
 		Input: []*proto.Input{
@@ -59,6 +59,8 @@ func MakeTransaction() {
 			},
 		},
 	}
+
+	core.SignTransaction(tx, prKey)
 
 	_, err = client.HandleTransaction(context.TODO(), tx)
 

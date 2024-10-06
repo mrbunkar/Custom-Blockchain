@@ -1,28 +1,40 @@
 package core
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"errors"
 
 	"github.com/mrbunkar/blockchain/crypto"
 	"github.com/mrbunkar/blockchain/proto"
 	pb "google.golang.org/protobuf/proto"
 )
 
-func SignTransaction(tx *proto.Transaction, pk *crypto.Privatekey) *crypto.Signature {
+func SignTransaction(tx *proto.Transaction, pk *crypto.Privatekey) error {
 	hash := HashTransaction(tx)
 
-	sign, err := pk.Sign(hash)
-
-	if err != nil {
-		panic(err)
+	for _, input := range tx.Input {
+		if !bytes.Equal(input.PublicKey, pk.PublicKey) {
+			return errors.New("private key does not match input's public key")
+		}
+		sign, err := pk.Sign(hash)
+		if err != nil {
+			return err
+		}
+		input.Signature = sign.Bytes()
 	}
 
-	return sign
+	return nil
 }
 
 func HashTransaction(tx *proto.Transaction) []byte {
-	b, err := pb.Marshal(tx)
+	txCopy := pb.Clone(tx).(*proto.Transaction)
 
+	for _, input := range txCopy.Input {
+		input.Signature = nil
+	}
+
+	b, err := pb.Marshal(txCopy)
 	if err != nil {
 		panic(err)
 	}
@@ -32,12 +44,11 @@ func HashTransaction(tx *proto.Transaction) []byte {
 }
 
 func VerifyTransaction(tx *proto.Transaction) bool {
+
 	hash := HashTransaction(tx)
 
 	for _, input := range tx.Input {
 		sg := crypto.SignFromBytes(input.Signature)
-		//@TODO: Make input.Signature part of Transaction itself
-		// input.Signature = nil
 		if !sg.Verify(input.PublicKey, hash) {
 			return false
 		}
