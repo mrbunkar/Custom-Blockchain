@@ -49,8 +49,9 @@ func NewChain(bs BlockStorer) *Chain {
 func (chain *Chain) AddBlock(block *proto.Block) error {
 
 	// Add the block header to headerlist
+	// @TODO: Block Validation
+
 	chain.headerList.AddHeader(block.Header)
-	// validation
 	return chain.blockStore.Put(block)
 }
 

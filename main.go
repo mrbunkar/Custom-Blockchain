@@ -15,11 +15,11 @@ import (
 )
 
 func main() {
-	MakeNode(":3000", []string{}, "Normal")
-	MakeNode(":4000", []string{":3000"}, "Normal")
+	MakeNode(":3000", []string{}, false)
+	MakeNode(":4000", []string{":3000"}, false)
 	time.Sleep(1 * time.Second)
-	MakeNode(":3100", []string{}, "Miner")
-	MakeNode(":3030", []string{":4000", ":3100"}, "Normal")
+	MakeNode(":3100", []string{}, false)
+	MakeNode(":3030", []string{":4000", ":3100"}, true)
 	time.Sleep(1 * time.Second)
 
 	for {
@@ -29,8 +29,8 @@ func main() {
 
 }
 
-func MakeNode(listenAddr string, bootstrapNodes []string, nodeType string) *node.Node {
-	node := node.NewNode(listenAddr, bootstrapNodes, nodeType)
+func MakeNode(listenAddr string, bootstrapNodes []string, isValidator bool) *node.Node {
+	node := node.NewNode(listenAddr, bootstrapNodes, isValidator)
 	go node.Start()
 	return node
 }

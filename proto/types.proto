@@ -8,10 +8,10 @@ message Block {
 }
 
 message Header {
-    int32 version = 1;
+    string version = 1;
     int32 height = 2;
-    bytes prevBlockHash = 3;
-    bytes dataHash = 4;
+    bytes prevBlockHash = 3; // Prievious block hash
+    bytes dataHash = 4; 
     int64 timestamp = 5;
     int32 nonce = 6;
 }
@@ -37,6 +37,10 @@ message Transaction {
 
 message None {}
 
+message Chain{
+    repeated Block blocks = 1;
+}
+
 message Version {
     string version = 1;
     int32 height = 2;
@@ -45,6 +49,8 @@ message Version {
 }
 
 service Node {
+    rpc HandleChain(Chain) returns(Chain){};
+    rpc HandleBlock(Block) returns(Block) {};
     rpc Handshake(Version) returns(Version) {};
     rpc HandleTransaction(Transaction) returns(Transaction) {};
 }

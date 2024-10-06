@@ -16,7 +16,7 @@ func RandomHash() []byte {
 
 func RandomBLock(height int32) *proto.Block {
 	header := &proto.Header{
-		Version:       1,
+		Version:       "",
 		Height:        height,
 		PrevBlockHash: RandomHash(),
 		DataHash:      RandomHash(),

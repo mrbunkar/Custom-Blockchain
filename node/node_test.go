@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func MakeNode(listenAddr string, bootstrapNodes []string, nodeType string) *Node {
-	node := NewNode(listenAddr, bootstrapNodes, nodeType)
+func MakeNode(listenAddr string, bootstrapNodes []string, isValidator bool) *Node {
+	node := NewNode(listenAddr, bootstrapNodes, isValidator)
 	go node.Start()
 	return node
 }

@@ -1,0 +1,57 @@
+2024-10-06T23:15:13.641+0530	INFO	node/node.go:193	gRPC server listening at [::]:4000
+2024-10-06T23:15:13.641+0530	INFO	node/node.go:193	gRPC server listening at [::]:3000
+2024-10-06T23:15:13.683+0530	DEBUG	node/node.go:246	[:3000] Handshake completed with [:4000]
+2024-10-06T23:15:13.684+0530	DEBUG	node/node.go:296	[:4000] Handshake completed with [:3000]
+2024-10-06T23:15:13.684+0530	INFO	node/node.go:299	[:4000] Bootstrap Netowrk done...
+2024-10-06T23:15:14.642+0530	INFO	node/node.go:193	gRPC server listening at [::]:3100
+2024-10-06T23:15:14.642+0530	INFO	node/node.go:193	gRPC server listening at [::]:3030
+2024-10-06T23:15:14.687+0530	DEBUG	node/node.go:246	[:4000] Handshake completed with [:3030]
+2024-10-06T23:15:14.723+0530	DEBUG	node/node.go:246	[:3000] Handshake completed with [:3030]
+2024-10-06T23:15:14.723+0530	DEBUG	node/node.go:83	[:3030] Handshake completed with [:3000]
+2024-10-06T23:15:14.723+0530	DEBUG	node/node.go:296	[:3030] Handshake completed with [:4000]
+2024-10-06T23:15:14.795+0530	DEBUG	node/node.go:246	[:4000] Handshake completed with [:3100]
+2024-10-06T23:15:14.795+0530	DEBUG	node/node.go:83	[:3100] Handshake completed with [:4000]
+2024-10-06T23:15:14.831+0530	DEBUG	node/node.go:246	[:3000] Handshake completed with [:3100]
+2024-10-06T23:15:14.832+0530	DEBUG	node/node.go:83	[:3100] Handshake completed with [:3000]
+2024-10-06T23:15:14.832+0530	DEBUG	node/node.go:246	[:3100] Handshake completed with [:3030]
+2024-10-06T23:15:14.832+0530	DEBUG	node/node.go:296	[:3030] Handshake completed with [:3100]
+2024-10-06T23:15:14.832+0530	INFO	node/node.go:299	[:3030] Bootstrap Netowrk done...
+2024-10-06T23:15:14.832+0530	ERROR	node/node.go:144	
+github.com/mrbunkar/blockchain/node.(*Node).AddGenesisBlock
+	/Users/satyanarayan.bunkar/Documents/go/blockchain/node/node.go:144
+github.com/mrbunkar/blockchain/node.(*Node).Start
+	/Users/satyanarayan.bunkar/Documents/go/blockchain/node/node.go:204
+2024-10-06T23:15:14.832+0530	ERROR	node/node.go:205	Outdated Node data
+github.com/mrbunkar/blockchain/node.(*Node).Start
+	/Users/satyanarayan.bunkar/Documents/go/blockchain/node/node.go:205
+2024-10-06T23:15:16.691+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52444]. We [:3000]
+2024-10-06T23:15:16.691+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52433]. We [:4000]
+2024-10-06T23:15:16.691+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52437]. We [:3030]
+2024-10-06T23:15:16.691+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52435]. We [:3030]
+2024-10-06T23:15:16.692+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52442]. We [:3100]
+2024-10-06T23:15:16.692+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52443]. We [:3100]
+2024-10-06T23:15:17.736+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52445]. We [:3000]
+2024-10-06T23:15:17.737+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52433]. We [:4000]
+2024-10-06T23:15:17.738+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52437]. We [:3030]
+2024-10-06T23:15:17.738+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52443]. We [:3100]
+2024-10-06T23:15:17.738+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52442]. We [:3100]
+2024-10-06T23:15:17.738+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52438]. We [:3100]
+2024-10-06T23:15:18.775+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52446]. We [:3000]
+2024-10-06T23:15:18.776+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52433]. We [:4000]
+2024-10-06T23:15:18.777+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52437]. We [:3030]
+2024-10-06T23:15:18.777+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52435]. We [:3030]
+2024-10-06T23:15:18.778+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52443]. We [:3100]
+2024-10-06T23:15:18.778+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52442]. We [:3100]
+2024-10-06T23:15:19.812+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52447]. We [:3000]
+2024-10-06T23:15:19.813+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52433]. We [:4000]
+2024-10-06T23:15:19.814+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52442]. We [:3100]
+2024-10-06T23:15:19.814+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52437]. We [:3030]
+2024-10-06T23:15:20.839+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52448]. We [:3000]
+2024-10-06T23:15:20.840+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52433]. We [:4000]
+2024-10-06T23:15:20.841+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52442]. We [:3100]
+2024-10-06T23:15:20.841+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52437]. We [:3030]
+2024-10-06T23:15:21.871+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52449]. We [:3000]
+2024-10-06T23:15:21.871+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52437]. We [:3030]
+2024-10-06T23:15:21.872+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52434]. We [:4000]
+2024-10-06T23:15:21.872+0530	DEBUG	node/node.go:224	Recieved transaction from [[::1]:52443]. We [:3100]
+make: *** [run] Interrupt: 2

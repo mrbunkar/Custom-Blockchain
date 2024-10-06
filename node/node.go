@@ -26,12 +26,15 @@ type Node struct {
 	logger         *zap.SugaredLogger
 	bootstrapNodes []string
 	pool           *Mempool
-	nodeType       string
+	isValidator    bool
+	Chain          *Chain
 	proto.UnimplementedNodeServer
 }
 
-func NewNode(listenAddr string, bootstrapNodes []string, nodeType string) *Node {
+func NewNode(listenAddr string, bootstrapNodes []string, isValidator bool) *Node {
 	logger, _ := zap.NewDevelopment()
+	bs := NewMemoryBlockStore()
+
 	return &Node{
 		peerLock:       sync.Mutex{},
 		peers:          make(map[proto.NodeClient]*proto.Version),
@@ -41,11 +44,9 @@ func NewNode(listenAddr string, bootstrapNodes []string, nodeType string) *Node 
 		logger:         logger.Sugar(),
 		bootstrapNodes: bootstrapNodes,
 		pool:           NewMempool(),
-		nodeType:       nodeType,
+		isValidator:    isValidator,
+		Chain:          NewChain(bs),
 	}
-}
-
-func (node *Node) proofOfWork(puzzle string) {
 }
 
 func (node *Node) isPeer(Addr string) bool {
@@ -91,9 +92,24 @@ func (node *Node) deletePeer(peer proto.NodeClient) {
 	delete(node.peers, peer)
 }
 
-// func (node *Node) NewBlock() *proto.Block {
+func (node *Node) GenesisBlock() *proto.Block {
 
-// }
+	header := &proto.Header{
+		Version:       node.version,
+		Height:        node.Height,
+		PrevBlockHash: []byte{},
+		DataHash:      []byte{},
+		Timestamp:     time.Now().Unix(),
+		Nonce:         0,
+	}
+
+	tx := &proto.Transaction{}
+
+	return &proto.Block{
+		Header:      header,
+		Transaction: []*proto.Transaction{tx},
+	}
+}
 
 func (node *Node) TxsVerification(txs *proto.Transaction) bool {
 	// @TODO Add UTXO model for verification
@@ -106,6 +122,11 @@ func (node *Node) TxsVerification(txs *proto.Transaction) bool {
 	return core.VerifyTransaction(txs)
 }
 
+func (node *Node) AddNewBlock() *proto.Block {
+	// @TODO: Proof Of Stake Algorithi for Add New Block
+	return nil
+}
+
 func (node *Node) validatorLoop() {
 	ticker := time.NewTicker(1 * time.Second)
 
@@ -115,6 +136,56 @@ func (node *Node) validatorLoop() {
 			fmt.Println("Time to mine")
 		}
 	}
+}
+
+func (node *Node) AddGenesisBlock() error {
+
+	genesisBlock := node.GenesisBlock()
+	ctx := context.TODO()
+	_, err := node.HandleBlock(ctx, genesisBlock)
+
+	if err != nil {
+		node.logger.Errorf(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (node *Node) HandleBlock(ctx context.Context, block *proto.Block) (*proto.Block, error) {
+	// peer, _ := peer.FromContext(ctx)
+	// if peer == nil {
+
+	// }
+
+	if block.Header.Height < node.Height {
+		return nil, nil
+	}
+
+	if block.Header.Height > node.Height {
+		// @TODO: ask for full chain as we have the outdated chain
+		return nil, nil
+	}
+
+	if err := node.Chain.AddBlock(block); err != nil {
+		node.logger.Errorf("Add block failed, err: {%s}\n", err)
+		return nil, err
+	}
+
+	node.Height += 1
+
+	go func() {
+		if err := node.Broadcast(block); err != nil {
+			// @TODO: check error if we have outdated chain, then we nee to sync
+			//  node.SyncWithPeer(*proto.Client)
+			node.logger.Error("Broadcast Failed, Error: %s\n", err)
+			return
+		}
+	}()
+
+	node.logger.Debugf("Recieved new block from [%s]. We: [%s]", "", node.listenAddr)
+	node.logger.Debugf("New Block added to chain. Chain lenght [%d]. We: [%s]\n", node.Height, node.listenAddr)
+	return nil, nil
 }
 
 func (node *Node) Start() error {
@@ -134,11 +205,19 @@ func (node *Node) Start() error {
 	node.logger.Infof("gRPC server listening at %v", listen.Addr().String())
 
 	if len(node.bootstrapNodes) != 0 {
-		go node.bootStrapNetwork(node.bootstrapNodes)
+		node.bootStrapNetwork(node.bootstrapNodes)
 	}
 
-	if node.nodeType == "Miner" {
+	if node.isValidator {
 		go node.validatorLoop()
+	}
+
+	if node.isValidator {
+		if err := node.AddGenesisBlock(); err != nil {
+			node.logger.Errorln(err)
+			// What if its already a working node, that means you need to ask for copy when booted
+		}
+		// What if its already a working node, that means you need to ask for copy when booted
 	}
 
 	return server.Serve(listen)
@@ -154,7 +233,7 @@ func (node *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) 
 		}
 
 		node.pool.StoreTx(tx)
-		node.logger.Debugf("Recieed transaction from [%s]. We [%s]", peer.Addr, node.listenAddr)
+		node.logger.Debugf("Recieved transaction from [%s]. We [%s]", peer.Addr, node.listenAddr)
 		go func() {
 			if err := node.Broadcast(tx); err != nil {
 				node.logger.Errorln("Error broadcating the transaction", err)
@@ -254,17 +333,27 @@ func (node *Node) Broadcast(msg any) error {
 
 	// Broadcast a newly transaction to all the nodes on the network
 
-	for peer, _ := range node.peers {
+	for peer, version := range node.peers {
 		switch v := msg.(type) {
 		case *proto.Transaction:
 			_, err := peer.HandleTransaction(context.TODO(), v)
 
 			if err != nil {
-				node.logger.Errorf("Error broadcasting transaction to peer [%s]\n", peer)
+				node.logger.Errorf("Error broadcasting transaction to peer [%s]. We: [%s\n", version.ListenAddr, node.listenAddr)
 				return err
 				// continue
 			}
+		case *proto.Block:
+			_, err := peer.HandleBlock(context.TODO(), v)
+
+			if err != nil {
+				node.logger.Errorf("Error broadcasting block to peer [%s]\n. We: [%s]", version.ListenAddr, node.listenAddr)
+				// @TODO, check what possible scenario for the block failure
+				// What is peer node have bigger chain
+				return err
+			}
 		}
+
 	}
 
 	return nil

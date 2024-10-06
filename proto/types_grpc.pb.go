@@ -19,6 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	Node_HandleChain_FullMethodName       = "/Node/HandleChain"
+	Node_HandleBlock_FullMethodName       = "/Node/HandleBlock"
 	Node_Handshake_FullMethodName         = "/Node/Handshake"
 	Node_HandleTransaction_FullMethodName = "/Node/HandleTransaction"
 )
@@ -27,6 +29,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NodeClient interface {
+	HandleChain(ctx context.Context, in *Chain, opts ...grpc.CallOption) (*Chain, error)
+	HandleBlock(ctx context.Context, in *Block, opts ...grpc.CallOption) (*Block, error)
 	Handshake(ctx context.Context, in *Version, opts ...grpc.CallOption) (*Version, error)
 	HandleTransaction(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*Transaction, error)
 }
@@ -37,6 +41,26 @@ type nodeClient struct {
 
 func NewNodeClient(cc grpc.ClientConnInterface) NodeClient {
 	return &nodeClient{cc}
+}
+
+func (c *nodeClient) HandleChain(ctx context.Context, in *Chain, opts ...grpc.CallOption) (*Chain, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Chain)
+	err := c.cc.Invoke(ctx, Node_HandleChain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeClient) HandleBlock(ctx context.Context, in *Block, opts ...grpc.CallOption) (*Block, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Block)
+	err := c.cc.Invoke(ctx, Node_HandleBlock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *nodeClient) Handshake(ctx context.Context, in *Version, opts ...grpc.CallOption) (*Version, error) {
@@ -63,6 +87,8 @@ func (c *nodeClient) HandleTransaction(ctx context.Context, in *Transaction, opt
 // All implementations must embed UnimplementedNodeServer
 // for forward compatibility.
 type NodeServer interface {
+	HandleChain(context.Context, *Chain) (*Chain, error)
+	HandleBlock(context.Context, *Block) (*Block, error)
 	Handshake(context.Context, *Version) (*Version, error)
 	HandleTransaction(context.Context, *Transaction) (*Transaction, error)
 	mustEmbedUnimplementedNodeServer()
@@ -75,6 +101,12 @@ type NodeServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNodeServer struct{}
 
+func (UnimplementedNodeServer) HandleChain(context.Context, *Chain) (*Chain, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandleChain not implemented")
+}
+func (UnimplementedNodeServer) HandleBlock(context.Context, *Block) (*Block, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandleBlock not implemented")
+}
 func (UnimplementedNodeServer) Handshake(context.Context, *Version) (*Version, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Handshake not implemented")
 }
@@ -100,6 +132,42 @@ func RegisterNodeServer(s grpc.ServiceRegistrar, srv NodeServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Node_ServiceDesc, srv)
+}
+
+func _Node_HandleChain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Chain)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServer).HandleChain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Node_HandleChain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServer).HandleChain(ctx, req.(*Chain))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Node_HandleBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Block)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServer).HandleBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Node_HandleBlock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServer).HandleBlock(ctx, req.(*Block))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Node_Handshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -145,6 +213,14 @@ var Node_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Node",
 	HandlerType: (*NodeServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "HandleChain",
+			Handler:    _Node_HandleChain_Handler,
+		},
+		{
+			MethodName: "HandleBlock",
+			Handler:    _Node_HandleBlock_Handler,
+		},
 		{
 			MethodName: "Handshake",
 			Handler:    _Node_Handshake_Handler,
