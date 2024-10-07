@@ -2,6 +2,7 @@ package core
 
 import (
 	"crypto/sha256"
+	"fmt"
 
 	"github.com/mrbunkar/blockchain/crypto"
 
@@ -14,32 +15,38 @@ func HashBlock(block *proto.Block) []byte {
 }
 
 func SignBlock(pk *crypto.Privatekey, b *proto.Block) error {
+	b.Header.PublicKey = pk.PublicKey
 	sign, err := pk.Sign(HashBlock(b))
 
 	if err != nil {
 		return err
 	}
 	b.Header.Signature = sign.Bytes()
-
 	return nil
 }
 
-func VerifBlock(block *proto.Block) bool {
+func VerifyBlock(block *proto.Block) error {
 	hash := HashBlock(block)
 
 	sg := crypto.SignFromBytes(block.Header.Signature)
+
 	if sg == nil {
-		return false
+		return fmt.Errorf("missing Signature")
 	}
 
-	return sg.Verify(block.Header.PublicKey, hash)
+	ok := sg.Verify(block.Header.PublicKey, hash)
+
+	if !ok {
+		return fmt.Errorf("sign Verification failed")
+	}
+	return nil
 }
 
 func HashHeader(header *proto.Header) []byte {
 	headerCopy := pb.Clone(header).(*proto.Header)
 	headerCopy.Signature = nil
 
-	b, err := pb.Marshal(header)
+	b, err := pb.Marshal(headerCopy)
 	if err != nil {
 		panic(err)
 	}

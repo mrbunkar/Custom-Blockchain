@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/asn1"
-	"fmt"
 	"math/big"
 
 	"github.com/mrbunkar/blockchain/types"
@@ -58,13 +57,12 @@ func (k PublicKey) Address() types.Address {
 }
 
 func (sg *Signature) Verify(pubK PublicKey, data []byte) bool {
-	fmt.Println("Verify", pubK)
+
 	if pubK == nil {
 		return false
 	}
 
 	x, y := elliptic.UnmarshalCompressed(elliptic.P256(), pubK)
-
 	key := &ecdsa.PublicKey{
 		Curve: elliptic.P256(),
 		X:     x,

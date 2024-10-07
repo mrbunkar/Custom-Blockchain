@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mrbunkar/blockchain/core"
+	"github.com/mrbunkar/blockchain/crypto"
 	"github.com/mrbunkar/blockchain/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -17,16 +18,17 @@ import (
 )
 
 type Node struct {
-	version    string
-	Height     int32
-	listenAddr string
+	version     string
+	Height      int32
+	listenAddr  string
+	isValidator bool
+	privateKey  crypto.Privatekey
 
 	peerLock       sync.Mutex
 	peers          map[proto.NodeClient]*proto.Version
 	logger         *zap.SugaredLogger
 	bootstrapNodes []string
 	pool           *Mempool
-	isValidator    bool
 	Chain          *Chain
 	proto.UnimplementedNodeServer
 }
@@ -46,6 +48,7 @@ func NewNode(listenAddr string, bootstrapNodes []string, isValidator bool) *Node
 		pool:           NewMempool(),
 		isValidator:    isValidator,
 		Chain:          NewChain(bs),
+		privateKey:     *crypto.GeneratePrivateKey(),
 	}
 }
 
@@ -125,9 +128,9 @@ func (node *Node) TxsVerification(txs *proto.Transaction) bool {
 
 func (node *Node) VerifyBlock(block *proto.Block) error {
 
-	if !core.VerifBlock(block) {
+	if err := core.VerifyBlock(block); err != nil {
 		// Cryptography validation
-		return fmt.Errorf("Header Validation failed")
+		return fmt.Errorf("header Validation Failed.%s", err)
 	}
 
 	if err := node.Chain.VerifyBlock(block); err != nil {
@@ -170,6 +173,7 @@ func (node *Node) validatorLoop() {
 func (node *Node) AddGenesisBlock() error {
 
 	genesisBlock := node.GenesisBlock()
+	core.SignBlock(&node.privateKey, genesisBlock)
 
 	if err := node.Chain.AddBlock(genesisBlock); err != nil {
 		node.logger.Panic(err)
@@ -188,6 +192,11 @@ func (node *Node) AddGenesisBlock() error {
 
 func (node *Node) HandleBlock(ctx context.Context, block *proto.Block) (*proto.Block, error) {
 	peer, _ := peer.FromContext(ctx)
+
+	if node.Chain.BlockExist(block) {
+		node.logger.Debugf("Block Already part of Blockchain. We[%s]", node.listenAddr)
+		return nil, nil
+	}
 
 	if block.Header.Height < node.Height {
 		return nil, nil
@@ -382,7 +391,7 @@ func (node *Node) Broadcast(msg any) error {
 			_, err := peer.HandleBlock(context.TODO(), v)
 
 			if err != nil {
-				node.logger.Errorf("Error broadcasting block to peer [%s]\n. We: [%s]", version.ListenAddr, node.listenAddr)
+				node.logger.Errorf("Error broadcasting block to peer [%s]\n. We: [%s], Err: [%s]", version.ListenAddr, node.listenAddr, err)
 				// @TODO, check what possible scenario for the block failure
 				// What is peer node have bigger chain
 				return err

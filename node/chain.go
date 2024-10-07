@@ -3,6 +3,7 @@ package node
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 
 	"github.com/mrbunkar/blockchain/core"
 	"github.com/mrbunkar/blockchain/proto"
@@ -47,6 +48,10 @@ func NewChain(bs BlockStorer) *Chain {
 }
 
 func (chain *Chain) VerifyBlock(block *proto.Block) error {
+	if chain.Height() == -1 {
+		fmt.Println("Chain")
+		return nil
+	}
 
 	block1, err := chain.GetBlockByHash(block.Header.PrevBlockHash)
 	if err != nil {
@@ -59,7 +64,7 @@ func (chain *Chain) VerifyBlock(block *proto.Block) error {
 	}
 
 	if block1 != block2 {
-		return fmt.Errorf("Block from hash and block from height did not match")
+		return fmt.Errorf("Block1 from hash and block2 from height did not match")
 	}
 
 	return nil
@@ -93,4 +98,17 @@ func (chain *Chain) GetBlockByHash(hash []byte) (*proto.Block, error) {
 
 func (chain *Chain) Height() int {
 	return chain.headerList.Height()
+}
+
+func (chain *Chain) BlockExist(block *proto.Block) bool {
+
+	hash := core.HashBlock(block)
+	_, err := chain.GetBlockByHash(hash)
+
+	if err != nil {
+		log.Println("Block does not exist")
+		return false
+	}
+	log.Printf("Block does exist, Hash")
+	return true
 }
