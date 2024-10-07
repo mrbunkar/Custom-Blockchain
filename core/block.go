@@ -13,17 +13,32 @@ func HashBlock(block *proto.Block) []byte {
 	return HashHeader(block.Header)
 }
 
-func SignBlock(pk *crypto.Privatekey, b *proto.Block) *crypto.Signature {
+func SignBlock(pk *crypto.Privatekey, b *proto.Block) error {
 	sign, err := pk.Sign(HashBlock(b))
 
 	if err != nil {
-		panic(err)
+		return err
+	}
+	b.Header.Signature = sign.Bytes()
+
+	return nil
+}
+
+func VerifBlock(block *proto.Block) bool {
+	hash := HashBlock(block)
+
+	sg := crypto.SignFromBytes(block.Header.Signature)
+	if sg == nil {
+		return false
 	}
 
-	return sign
+	return sg.Verify(block.Header.PublicKey, hash)
 }
 
 func HashHeader(header *proto.Header) []byte {
+	headerCopy := pb.Clone(header).(*proto.Header)
+	headerCopy.Signature = nil
+
 	b, err := pb.Marshal(header)
 	if err != nil {
 		panic(err)

@@ -48,9 +48,11 @@ func TestSign(t *testing.T) {
 
 	b := RandomBLock(32)
 	pk := crypto.GeneratePrivateKey()
-	pb := pk.GeneratePublicKey()
+	pb := pk.PublicKey
 
-	sign := SignBlock(pk, b)
-	assert.True(t, sign.Verify(pb, HashBlock(b)))
-	assert.False(t, sign.Verify(pb, RandomHash()))
+	b.Header.PublicKey = pb
+	SignBlock(pk, b)
+	assert.True(t, VerifBlock(b))
+
+	assert.False(t, VerifBlock(RandomBLock(12)))
 }

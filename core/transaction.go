@@ -13,13 +13,15 @@ import (
 func SignTransaction(tx *proto.Transaction, pk *crypto.Privatekey) error {
 	hash := HashTransaction(tx)
 
+	sign, err := pk.Sign(hash)
+
+	if err != nil {
+		return err
+	}
+
 	for _, input := range tx.Input {
 		if !bytes.Equal(input.PublicKey, pk.PublicKey) {
 			return errors.New("private key does not match input's public key")
-		}
-		sign, err := pk.Sign(hash)
-		if err != nil {
-			return err
 		}
 		input.Signature = sign.Bytes()
 	}

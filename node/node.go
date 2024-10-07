@@ -39,7 +39,7 @@ func NewNode(listenAddr string, bootstrapNodes []string, isValidator bool) *Node
 		peerLock:       sync.Mutex{},
 		peers:          make(map[proto.NodeClient]*proto.Version),
 		version:        "Blockchain-0-2",
-		Height:         1,
+		Height:         0,
 		listenAddr:     listenAddr,
 		logger:         logger.Sugar(),
 		bootstrapNodes: bootstrapNodes,
@@ -119,7 +119,36 @@ func (node *Node) TxsVerification(txs *proto.Transaction) bool {
 			return false
 		}
 	}
+
 	return core.VerifyTransaction(txs)
+}
+
+func (node *Node) VerifyBlock(block *proto.Block) error {
+
+	if !core.VerifBlock(block) {
+		// Cryptography validation
+		return fmt.Errorf("Header Validation failed")
+	}
+
+	if err := node.Chain.VerifyBlock(block); err != nil {
+		return err
+	}
+
+	// Txs Verification
+	txs := block.Transaction
+	for _, tx := range txs {
+		if !node.TxsVerification(tx) {
+			return fmt.Errorf("Block: Transaction verification failed")
+		}
+	}
+
+	for _, tx := range txs {
+		if !node.pool.Check(tx) {
+			node.pool.DeleteTx(tx)
+		}
+	}
+
+	return nil
 }
 
 func (node *Node) AddNewBlock() *proto.Block {
@@ -141,22 +170,24 @@ func (node *Node) validatorLoop() {
 func (node *Node) AddGenesisBlock() error {
 
 	genesisBlock := node.GenesisBlock()
-	ctx := context.TODO()
-	_, err := node.HandleBlock(ctx, genesisBlock)
 
-	if err != nil {
-		node.logger.Errorf(err.Error())
-		return err
+	if err := node.Chain.AddBlock(genesisBlock); err != nil {
+		node.logger.Panic(err)
+		return nil
 	}
+	node.logger.Debugf("Genesis block added to Chain. We: [%s]", node.listenAddr)
 
+	go func() {
+		if err := node.Broadcast(genesisBlock); err != nil {
+			node.logger.Error("Broadcast Failed, Error: %s\n", err)
+			return
+		}
+	}()
 	return nil
 }
 
 func (node *Node) HandleBlock(ctx context.Context, block *proto.Block) (*proto.Block, error) {
-	// peer, _ := peer.FromContext(ctx)
-	// if peer == nil {
-
-	// }
+	peer, _ := peer.FromContext(ctx)
 
 	if block.Header.Height < node.Height {
 		return nil, nil
@@ -165,6 +196,10 @@ func (node *Node) HandleBlock(ctx context.Context, block *proto.Block) (*proto.B
 	if block.Header.Height > node.Height {
 		// @TODO: ask for full chain as we have the outdated chain
 		return nil, nil
+	}
+
+	if err := node.VerifyBlock(block); err != nil {
+		return nil, err
 	}
 
 	if err := node.Chain.AddBlock(block); err != nil {
@@ -183,7 +218,7 @@ func (node *Node) HandleBlock(ctx context.Context, block *proto.Block) (*proto.B
 		}
 	}()
 
-	node.logger.Debugf("Recieved new block from [%s]. We: [%s]", "", node.listenAddr)
+	node.logger.Debugf("Recieved new block from [%s]. We: [%s]", peer.Addr, node.listenAddr)
 	node.logger.Debugf("New Block added to chain. Chain lenght [%d]. We: [%s]\n", node.Height, node.listenAddr)
 	return nil, nil
 }

@@ -46,6 +46,25 @@ func NewChain(bs BlockStorer) *Chain {
 	}
 }
 
+func (chain *Chain) VerifyBlock(block *proto.Block) error {
+
+	block1, err := chain.GetBlockByHash(block.Header.PrevBlockHash)
+	if err != nil {
+		return err
+	}
+
+	block2, err := chain.GetBlockByHeight(int(block.Header.Height) - 1)
+	if err != nil {
+		return err
+	}
+
+	if block1 != block2 {
+		return fmt.Errorf("Block from hash and block from height did not match")
+	}
+
+	return nil
+}
+
 func (chain *Chain) AddBlock(block *proto.Block) error {
 
 	// Add the block header to headerlist
@@ -65,7 +84,6 @@ func (chain *Chain) GetBlockByHeight(height int) (*proto.Block, error) {
 	hash := core.HashHeader(header)
 
 	return chain.GetBlockByHash(hash)
-
 }
 
 func (chain *Chain) GetBlockByHash(hash []byte) (*proto.Block, error) {

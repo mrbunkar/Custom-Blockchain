@@ -14,6 +14,8 @@ message Header {
     bytes dataHash = 4; 
     int64 timestamp = 5;
     int32 nonce = 6;
+    bytes signature = 7;
+    bytes publicKey = 8;
 }
 
 message Input {
